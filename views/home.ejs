@@ -1,0 +1,21 @@
+<%- include("partials/header.ejs") %>
+<main>
+    <div class="container">
+        <h1>Welcome <%= code %></h1>
+        <h2>All users</h2>
+        <div class="user-list">
+            <% for(var i=0;i<users.length;i++){ %>
+                <% if(users[i]===code){ %>
+                    <% continue %>
+                <% } %>
+                <h3><a href="/chat/<%= users[i] %>?user=<%= code %>"><%= users[i] %></a>
+            </h3>
+            <% } %>
+        </div>
+    </div>
+    <div class="logout-container">
+    <a href="/logout" class="logout-button">Logout</a>
+</div>
+
+</main>
+<%- include("partials/footer.ejs") %>

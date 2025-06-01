@@ -1,0 +1,28 @@
+<%- include("partials/header.ejs") %>
+<main>
+    <div class="container">
+    <a href="/home?user=<%= user1 %>" class="back-button">← Back to Home</a>
+    </form>
+
+    <h3><%= user2 %></h3>
+    <div class="chat-window" id="chat-window">
+    <% for(var i=0; i < chats.length; i++) {
+        let parts = chats[i].split(": ");
+        let sender = parts[0];
+        let message = parts.slice(1).join(": "); %>
+        <p><strong><%= sender %>:</strong> <%= message %></p>
+    <% } %>
+</div>
+
+    <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>">
+        <input type="text" name="msg" placeholder="Enter message" required>
+        <input type="submit" value="send">
+    </form>
+    </div>
+</main>
+<script>
+  const chatWindow = document.getElementById("chat-window");
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+</script>
+
+<%- include("partials/footer.ejs") %>
