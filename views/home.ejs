@@ -3,19 +3,36 @@
     <div class="container">
         <h1>Welcome <%= code %></h1>
         <h2>All users</h2>
-        <div class="user-list">
+        <div class="user-list" id="user-list">
             <% for(var i=0;i<users.length;i++){ %>
                 <% if(users[i]===code){ %>
                     <% continue %>
                 <% } %>
-                <h3><a href="/chat/<%= users[i] %>?user=<%= code %>"><%= users[i] %></a>
-            </h3>
+                <h3><a href="/chat/<%= users[i] %>?user=<%= code %>"><%= users[i] %></a></h3>
             <% } %>
         </div>
     </div>
     <div class="logout-container">
-    <a href="/logout" class="logout-button">Logout</a>
-</div>
-
+        <a href="/logout" class="logout-button">Logout</a>
+    </div>
 </main>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io();
+    var currentUser = "<%= code %>";
+
+    socket.on("newUser", function(newUser) {
+        if (newUser === currentUser) return;
+
+        var userList = document.getElementById("user-list");
+        var h3 = document.createElement("h3");
+        var a = document.createElement("a");
+        a.href = "/chat/" + newUser + "?user=" + currentUser;
+        a.textContent = newUser;
+        h3.appendChild(a);
+        userList.appendChild(h3);
+    });
+</script>
+
 <%- include("partials/footer.ejs") %>

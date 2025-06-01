@@ -1,28 +1,44 @@
 <%- include("partials/header.ejs") %>
 <main>
     <div class="container">
-    <a href="/home?user=<%= user1 %>" class="back-button">← Back to Home</a>
-    </form>
+        <a href="/home?user=<%= user1 %>" class="back-button">← Back to Home</a>
 
-    <h3><%= user2 %></h3>
-    <div class="chat-window" id="chat-window">
-    <% for(var i=0; i < chats.length; i++) {
-        let parts = chats[i].split(": ");
-        let sender = parts[0];
-        let message = parts.slice(1).join(": "); %>
-        <p><strong><%= sender %>:</strong> <%= message %></p>
-    <% } %>
-</div>
+        <h3><%= user2 %></h3>
+        <div class="chat-window" id="chat-window">
+            <% for(var i=0; i < chats.length; i++) {
+                var parts = chats[i].split(": ");
+                var sender = parts[0];
+                var message = parts.slice(1).join(": "); %>
+                <p><strong><%= sender %>:</strong> <%= message %></p>
+            <% } %>
+        </div>
 
-    <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>">
-        <input type="text" name="msg" placeholder="Enter message" required>
-        <input type="submit" value="send">
-    </form>
+        <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>">
+            <input type="text" name="msg" placeholder="Enter message" required>
+            <input type="submit" value="send">
+        </form>
     </div>
 </main>
+
+<script src="/socket.io/socket.io.js"></script>
 <script>
-  const chatWindow = document.getElementById("chat-window");
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+    var socket = io();
+    var user1 = "<%= user1 %>";
+    var user2 = "<%= user2 %>";
+    var room = [user1, user2].sort().join("_");
+
+    socket.emit("joinRoom", room);
+
+    var chatWindow = document.getElementById("chat-window");
+
+    socket.on("message", function(data) {
+        var p = document.createElement("p");
+        p.innerHTML = "<strong>" + data.sender + ":</strong> " + data.message;
+        chatWindow.appendChild(p);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    });
+
+    chatWindow.scrollTop = chatWindow.scrollHeight;
 </script>
 
 <%- include("partials/footer.ejs") %>
