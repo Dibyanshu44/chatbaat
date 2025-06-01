@@ -1,0 +1,17 @@
+# dependencies
+node_modules/
+
+# dotenv environment variables file
+.env
+
+# logs
+logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+
+# Optional: if you build your project or use certain editors, add those too
+dist/
+.vscode/
