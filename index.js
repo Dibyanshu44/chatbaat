@@ -177,53 +177,93 @@ app.get("/edit/:id", (req, res) => {
 });
 
 app.post("/edit/:id", (req, res) => {
-  const user1 = req.query.user;  // logged in user (editor)
-  const user2 = req.params.id;   // chat partner
-  const j = req.query.j;         // message index
-  const updated = req.body.msg;  // new message text
-  const sortarr = [user1, user2].sort();
-  const room = sortarr[0] + "_" + sortarr[1];
+  const user1 = req.query.user;
+  const user2 = req.params.id;
+  const j = parseInt(req.query.j);
+  const msg = req.body.msg;
 
-  fs.readFile(room + ".txt", "utf8", (err, data) => {
-    if (err) throw err;
-    const lines = data.split("|").filter(line => line.trim() !== "");
-    let newdata = "";
-    let originalSender = null;
-    let found = false;
+  const room = [user1, user2].sort().join("_");
+  const filePath = `./chats/${room}.txt`;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].split("`");
-      if (line.length < 2) continue;
+  fs.readFile(filePath, "utf-8", (err, data) => {
+    if (err) return res.status(500).send("Server Error");
 
-      if (line[0] === j) {
-        const sepIndex = line[1].indexOf(": ");
-        originalSender = sepIndex !== -1 ? line[1].slice(0, sepIndex) : null;
-        newdata += `${j}\`${originalSender}: ${updated}|`;
-        found = true;
-      } else {
-        newdata += `${line[0]}\`${line[1]}|`;
-      }
+    let lines = data
+      .trim()
+      .split("|")
+      .filter(line => line.includes("`"));
+
+    if (j < 0 || j >= lines.length) {
+      return res.status(400).send("Invalid message index");
     }
 
-    if (!found) {
-      // Message to edit not found, redirect without changes
-      return res.redirect(`/chat/${user2}?user=${user1}`);
-    }
+    const parts = lines[j].split("`");
+    if (parts.length < 2) return res.status(400).send("Invalid line format");
 
-    fs.writeFile(room + ".txt", newdata, (err) => {
-      if (err) throw err;
-      console.log("edited successfully");
+    const sender = parts[1].split(": ")[0];
 
-      io.to(room).emit("editMessage", {
-        index: Number(j),
-        sender: originalSender,
-        message: updated
-      });
+    lines[j] = `${j}\`${sender}: ${msg}`;
+    const updated = lines.join("|") + "|";
+
+    fs.writeFile(filePath, updated, (err) => {
+      if (err) return res.status(500).send("Error saving");
+
+      io.to(room).emit("editMessage", { index: j, message: msg });
 
       res.redirect(`/chat/${user2}?user=${user1}`);
     });
   });
 });
+
+
+// app.post("/edit/:id", (req, res) => {
+//   const user1 = req.query.user;  // logged in user (editor)
+//   const user2 = req.params.id;   // chat partner
+//   const j = req.query.j;         // message index
+//   const updated = req.body.msg;  // new message text
+//   const sortarr = [user1, user2].sort();
+//   const room = sortarr[0] + "_" + sortarr[1];
+
+//   fs.readFile(room + ".txt", "utf8", (err, data) => {
+//     if (err) throw err;
+//     const lines = data.split("|").filter(line => line.trim() !== "");
+//     let newdata = "";
+//     let originalSender = null;
+//     let found = false;
+
+//     for (let i = 0; i < lines.length; i++) {
+//       const line = lines[i].split("`");
+//       if (line.length < 2) continue;
+
+//       if (line[0] === j) {
+//         const sepIndex = line[1].indexOf(": ");
+//         originalSender = sepIndex !== -1 ? line[1].slice(0, sepIndex) : null;
+//         newdata += `${j}\`${originalSender}: ${updated}|`;
+//         found = true;
+//       } else {
+//         newdata += `${line[0]}\`${line[1]}|`;
+//       }
+//     }
+
+//     if (!found) {
+//       // Message to edit not found, redirect without changes
+//       return res.redirect(`/chat/${user2}?user=${user1}`);
+//     }
+
+//     fs.writeFile(room + ".txt", newdata, (err) => {
+//       if (err) throw err;
+//       console.log("edited successfully");
+
+//       io.to(room).emit("editMessage", {
+//         index: Number(j),
+//         sender: originalSender,
+//         message: updated
+//       });
+
+//       res.redirect(`/chat/${user2}?user=${user1}`);
+//     });
+//   });
+// });
 
 io.on("connection", function (socket) {
     console.log("A user connected");
