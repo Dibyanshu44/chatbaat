@@ -5,15 +5,29 @@
 
         <h3><%= user2 %></h3>
         <div class="chat-window" id="chat-window">
-            <% for(var i=0; i < chats.length; i++) {
-                var parts = chats[i].split(": ");
+           <% for(var i=0; i < chats.length; i++) {
+                var number = chats[i].split("`");
+                var parts = number[1].split(": ");
                 var sender = parts[0];
-                var message = parts.slice(1).join(": "); %>
-                <p><strong><%= sender %>:</strong> <%= message %></p>
-            <% } %>
+                var message = parts.slice(1).join(": ");
+                var isSender = (sender === user1);
+           %>
+            <div class="chat-options" id="<%= i %>">
+                <p>
+                    <strong><%= sender %></strong>
+                    <% if (isSender) { %>
+                        <span class="chat-icons">
+                            <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
+                            <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
+                        </span>
+                    <% } %>
+                    : <%= message %>
+                </p>
+            </div>
+           <% } %>
         </div>
-
-        <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>">
+        <% var j=chats.length %>
+        <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
             <input type="text" name="msg" placeholder="Enter message" required>
             <input type="submit" value="send">
         </form>
@@ -32,9 +46,21 @@
     var chatWindow = document.getElementById("chat-window");
 
     socket.on("message", function(data) {
-        var p = document.createElement("p");
-        p.innerHTML = "<strong>" + data.sender + ":</strong> " + data.message;
-        chatWindow.appendChild(p);
+        var div = document.createElement("div");
+        div.classList.add("chat-options");
+
+        var html = "<p><strong>" + data.sender + "</strong>";
+        if (data.sender === user1) {
+            html +=
+                ' <span class="chat-icons">' +
+                '<a href="/edit/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="edit" title="Edit message">✏️</a>' +
+                '<a href="/dlt/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="dlt" title="Delete message">🗑️</a>' +
+                '</span>';
+        }
+        html += ": " + data.message + "</p>";
+
+        div.innerHTML = html;
+        chatWindow.appendChild(div);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     });
 

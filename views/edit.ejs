@@ -1,0 +1,19 @@
+<%- include("partials/header.ejs") %>
+
+<main>
+  <div class="container auth-box">
+    <a href="/chat/<%= user2 %>?user=<%= user1 %>" class="back-button">← Back to Chat</a>
+
+    <h2>Edit Message</h2>
+
+    <form method="post" action="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
+      <label for="msg">Edit your message:</label>
+      <div class="input">
+        <input type="text" id="msg" name="msg" value="<%= content.split(': ').slice(1).join(': ') %>" required>
+      </div>
+      <input type="submit" value="Save">
+    </form>
+  </div>
+</main>
+
+<%- include("partials/footer.ejs") %>

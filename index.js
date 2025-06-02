@@ -106,17 +106,19 @@ app.post("/chat/:id", (req, res) => {
     var msg = req.body.msg;
     var user1 = req.query.user;
     var user2 = req.params.id;
+    var j = req.query.j;
     var sortarr = [user1, user2].sort();
     var room = sortarr[0] + "_" + sortarr[1];
 
-    fs.appendFile(room + ".txt", user1 + ": " + msg + "|", (err) => {
+    fs.appendFile(room + ".txt", j + "`" + user1 + ": " + msg + "|", (err) => {
         if (err) throw err;
         console.log("saved successfully");
 
-        // Emit to chat room
+        // Emit to chat room with index j (as number)
         io.to(room).emit("message", {
             sender: user1,
-            message: msg
+            message: msg,
+            index: Number(j)
         });
 
         res.redirect("/chat/" + user2 + "?user=" + user1);
@@ -143,10 +145,88 @@ app.get("/logout", (req, res) => {
 
 app.get("/home", (req, res) => {
     var user = req.query.user;
+
     if (!user || userlist.indexOf(user) === -1) {
         return res.redirect("/");
     }
     res.render("home.ejs", { code: user, users: userlist });
+});
+
+app.get("/dlt/:id", (req, res) => {
+    const user2 = req.params.id;
+    const user1 = req.query.user;
+    const j = req.query.j;
+    var sortarr = [user1, user2].sort();
+    var room = sortarr[0] + "_" + sortarr[1];
+    fs.readFile(room + ".txt", "utf8", (err, data) => {
+        if (err) throw err;
+        var lines = data.split("|");
+        var count = 0;
+        let newdata = "";
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].split("`");
+            if (line.length < 2) continue;
+            if (j !== line[0]) {
+                newdata += count + "`" + line[1] + "|";
+                count++;
+            }
+        }
+        fs.writeFile(room + ".txt", newdata, (err) => {
+            if (err) throw err;
+            console.log("deleted successfully");
+            res.redirect("/chat/" + user2 + "?user=" + user1);
+        });
+    });
+});
+
+app.get("/edit/:id", (req, res) => {
+    const user1 = req.query.user;
+    const user2 = req.params.id;
+    const j = req.query.j;
+    let existingdata = "";
+    var sortarr = [user1, user2].sort();
+    var room = sortarr[0] + "_" + sortarr[1];
+    fs.readFile(room + ".txt", "utf8", (err, data) => {
+        if (err) throw err;
+        var lines = data.split("|");
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].split("`");
+            if (line.length < 2) continue;
+            if (j === line[0]) {
+                existingdata = line[1];
+            }
+        }
+        res.render("edit.ejs", { j: j, content: existingdata, user1: user1, user2: user2 });
+    });
+});
+
+app.post("/edit/:id", (req, res) => {
+    const user1 = req.query.user;
+    const user2 = req.params.id;
+    const j = req.query.j;
+    const updated = req.body.msg;
+    var sortarr = [user1, user2].sort();
+    var room = sortarr[0] + "_" + sortarr[1];
+
+    fs.readFile(room + ".txt", "utf8", (err, data) => {
+        if (err) throw err;
+        var lines = data.split("|");
+        let newdata = "";
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].split("`");
+            if (line.length < 2) continue;
+            if (line[0] === j) {
+                newdata += i + "`" + user1 + ": " + updated + "|";
+            } else {
+                newdata += i + "`" + line[1] + "|";
+            }
+        }
+        fs.writeFile(room + ".txt", newdata, (err) => {
+            if (err) throw err;
+            console.log("edited successfully");
+            res.redirect("/chat/" + user2 + "?user=" + user1);
+        });
+    });
 });
 
 server.listen(port, () => {
