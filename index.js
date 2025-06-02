@@ -176,39 +176,78 @@ app.get("/edit/:id", (req, res) => {
     });
 });
 
+// app.post("/edit/:id", (req, res) => {
+//   const user1 = req.query.user;
+//   const user2 = req.params.id;
+//   const j = parseInt(req.query.j);
+//   const msg = req.body.msg;
+
+//   const room = [user1, user2].sort().join("_");
+//   const filePath = `./chats/${room}.txt`;
+
+//   fs.readFile(filePath, "utf-8", (err, data) => {
+//     if (err) return res.status(500).send("Server Error");
+
+//     let lines = data
+//       .trim()
+//       .split("|")
+//       .filter(line => line.includes("`"));
+
+//     if (j < 0 || j >= lines.length) {
+//       return res.status(400).send("Invalid message index");
+//     }
+
+//     const parts = lines[j].split("`");
+//     if (parts.length < 2) return res.status(400).send("Invalid line format");
+
+//     const sender = parts[1].split(": ")[0];
+
+//     lines[j] = `${j}\`${sender}: ${msg}`;
+//     const updated = lines.join("|") + "|";
+
+//     fs.writeFile(filePath, updated, (err) => {
+//       if (err) return res.status(500).send("Error saving");
+
+//       io.to(room).emit("editMessage", { index: j, message: msg });
+
+//       res.redirect(`/chat/${user2}?user=${user1}`);
+//     });
+//   });
+// });
+
 app.post("/edit/:id", (req, res) => {
   const user1 = req.query.user;
   const user2 = req.params.id;
-  const j = parseInt(req.query.j);
-  const msg = req.body.msg;
+  const j = parseInt(req.query.j, 10);
+  const newMsg = req.body.msg;
 
   const room = [user1, user2].sort().join("_");
   const filePath = `./chats/${room}.txt`;
 
   fs.readFile(filePath, "utf-8", (err, data) => {
-    if (err) return res.status(500).send("Server Error");
+    if (err) return res.status(500).send("Server Error: Could not read file");
 
     let lines = data
-      .trim()
       .split("|")
-      .filter(line => line.includes("`"));
+      .filter(line => line.trim() && line.includes("`"));
 
     if (j < 0 || j >= lines.length) {
       return res.status(400).send("Invalid message index");
     }
 
-    const parts = lines[j].split("`");
-    if (parts.length < 2) return res.status(400).send("Invalid line format");
+    const [index, rest] = lines[j].split("`");
+    const sepIndex = rest.indexOf(": ");
+    if (sepIndex === -1) return res.status(400).send("Invalid line format");
 
-    const sender = parts[1].split(": ")[0];
+    const sender = rest.slice(0, sepIndex);
+    lines[j] = `${j}\`${sender}: ${newMsg}`;
 
-    lines[j] = `${j}\`${sender}: ${msg}`;
     const updated = lines.join("|") + "|";
 
     fs.writeFile(filePath, updated, (err) => {
-      if (err) return res.status(500).send("Error saving");
+      if (err) return res.status(500).send("Server Error: Could not write file");
 
-      io.to(room).emit("editMessage", { index: j, message: msg });
+      io.to(room).emit("editMessage", { index: j, message: newMsg });
 
       res.redirect(`/chat/${user2}?user=${user1}`);
     });

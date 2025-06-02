@@ -13,7 +13,20 @@
           type="text"
           id="msg"
           name="msg"
-          value="<%- content.split(': ').slice(1).join(': ') %>"
+          <%
+  const sepIndex = content.indexOf(": ");
+  const msgValue = sepIndex !== -1 ? content.slice(sepIndex + 2) : "";
+%>
+<input
+  type="text"
+  id="msg"
+  name="msg"
+  value="<%- msgValue %>"
+  required
+  maxlength="500"
+  autocomplete="off"
+/>
+
           required
           maxlength="500"
           autocomplete="off"
