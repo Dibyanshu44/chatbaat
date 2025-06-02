@@ -82,9 +82,15 @@ app.post("/login", (req, res) => {
     res.render("index.ejs", { code: "login", note: "Username not found" });
 });
 
+// MINIMAL CHANGE HERE: added check to prevent internal server error
 app.get("/chat/:id", (req, res) => {
     var user1 = req.query.user;
     var user2 = req.params.id;
+
+    if (!user1 || userlist.indexOf(user1) === -1) {
+        return res.redirect("/");
+    }
+
     var sortarr = [user1, user2].sort();
     var filename = sortarr[0] + "_" + sortarr[1] + ".txt";
 
@@ -96,7 +102,7 @@ app.get("/chat/:id", (req, res) => {
                 res.render("chats.ejs", { user1: user1, user2: user2, chats: chatlist });
             });
         } else {
-            var chatlist = data.trim().split("|");
+            var chatlist = data.trim().split("|").filter(line => line.trim() !== "");
             res.render("chats.ejs", { user1: user1, user2: user2, chats: chatlist });
         }
     });
