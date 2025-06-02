@@ -9,24 +9,18 @@
     <form method="POST" action="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
       <label for="msg">Edit your message:</label>
       <div class="input">
+        <% 
+          let msgValue = "";
+          const sepIndex = content.indexOf(": ");
+          if (sepIndex !== -1) {
+            msgValue = content.slice(sepIndex + 2);
+          }
+        %>
         <input
           type="text"
           id="msg"
           name="msg"
-          <%
-  const sepIndex = content.indexOf(": ");
-  const msgValue = sepIndex !== -1 ? content.slice(sepIndex + 2) : "";
-%>
-<input
-  type="text"
-  id="msg"
-  name="msg"
-  value="<%- msgValue %>"
-  required
-  maxlength="500"
-  autocomplete="off"
-/>
-
+          value="<%= msgValue %>"
           required
           maxlength="500"
           autocomplete="off"
