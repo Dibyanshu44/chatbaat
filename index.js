@@ -101,12 +101,10 @@ app.get("/chat/:id", (req, res) => {
             });
         } else {
             var chatlist = data.trim().split("|").filter(line => line.trim() !== "");
-            // no change here, keep passing raw strings, parse in EJS
             res.render("chats.ejs", { user1: user1, user2: user2, chats: chatlist });
         }
     });
 });
-
 
 app.post("/chat/:id", (req, res) => {
     var msg = req.body.msg;
@@ -179,40 +177,52 @@ app.get("/edit/:id", (req, res) => {
 });
 
 app.post("/edit/:id", (req, res) => {
-    const user1 = req.query.user;
-    const user2 = req.params.id;
-    const j = req.query.j;
-    const updated = req.body.msg;
-    var sortarr = [user1, user2].sort();
-    var room = sortarr[0] + "_" + sortarr[1];
+  const user1 = req.query.user;  // logged in user (editor)
+  const user2 = req.params.id;   // chat partner
+  const j = req.query.j;         // message index
+  const updated = req.body.msg;  // new message text
+  const sortarr = [user1, user2].sort();
+  const room = sortarr[0] + "_" + sortarr[1];
 
-    fs.readFile(room + ".txt", "utf8", (err, data) => {
-        if (err) throw err;
-        var lines = data.split("|");
-        let newdata = "";
-        for (var i = 0; i < lines.length; i++) {
-            var line = lines[i].split("`");
-            if (line.length < 2) continue;
-            if (line[0] === j) {
-                newdata += j + "`" + user1 + ": " + updated + "|";
-            } else {
-                newdata += line[0] + "`" + line[1] + "|";
-            }
-        }
-        fs.writeFile(room + ".txt", newdata, (err) => {
-            if (err) throw err;
-            console.log("edited successfully");
+  fs.readFile(room + ".txt", "utf8", (err, data) => {
+    if (err) throw err;
+    const lines = data.split("|").filter(line => line.trim() !== "");
+    let newdata = "";
+    let originalSender = null;
+    let found = false;
 
-            // Emit editMessage event to room so all clients update in real-time
-            io.to(room).emit("editMessage", {
-                index: Number(j),
-                sender: user1,
-                message: updated
-            });
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].split("`");
+      if (line.length < 2) continue;
 
-            res.redirect("/chat/" + user2 + "?user=" + user1);
-        });
+      if (line[0] === j) {
+        const sepIndex = line[1].indexOf(": ");
+        originalSender = sepIndex !== -1 ? line[1].slice(0, sepIndex) : null;
+        newdata += `${j}\`${originalSender}: ${updated}|`;
+        found = true;
+      } else {
+        newdata += `${line[0]}\`${line[1]}|`;
+      }
+    }
+
+    if (!found) {
+      // Message to edit not found, redirect without changes
+      return res.redirect(`/chat/${user2}?user=${user1}`);
+    }
+
+    fs.writeFile(room + ".txt", newdata, (err) => {
+      if (err) throw err;
+      console.log("edited successfully");
+
+      io.to(room).emit("editMessage", {
+        index: Number(j),
+        sender: originalSender,
+        message: updated
+      });
+
+      res.redirect(`/chat/${user2}?user=${user1}`);
     });
+  });
 });
 
 io.on("connection", function (socket) {
