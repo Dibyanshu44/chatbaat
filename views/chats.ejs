@@ -13,17 +13,20 @@
                 var isSender = (sender === user1);
            %>
             <div class="chat-options" id="<%= i %>">
-                <p>
-                    <strong><%= sender %></strong>
-                    <% if (isSender) { %>
-                        <span class="chat-icons">
-                            <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
-                            <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
-                        </span>
-                    <% } %>
-                    : <%= message %>
-                </p>
-            </div>
+  <div class="chat-header" style="display:flex; justify-content: space-between; align-items: center;">
+    <strong><%= sender %>:</strong>
+    <% if (isSender) { %>
+      <span class="chat-icons">
+        <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
+        <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
+      </span>
+    <% } %>
+  </div>
+  <div class="chat-message-box" style="border: 1px solid #ccc; padding: 6px 10px; margin-top: 4px; border-radius: 6px;">
+    <%= message %>
+  </div>
+</div>
+
            <% } %>
         </div>
         <% var j=chats.length %>
@@ -36,6 +39,12 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+    document.querySelectorAll('.edit, .dlt').forEach(link => {
+    link.addEventListener('click', function() {
+        window.location.href = this.href;
+    });
+    });
+
     var socket = io();
     var user1 = "<%= user1 %>";
     var user2 = "<%= user2 %>";
