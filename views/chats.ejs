@@ -1,90 +1,82 @@
 <%- include("partials/header.ejs") %>
 <main>
-    <div class="container">
-        <a href="/home?user=<%= user1 %>" class="back-button">← Back to Home</a>
+  <div class="container">
+    <a href="/home?user=<%= user1 %>" class="back-button">← Back to Home</a>
+    <h3>Chat with <%= user2 %></h3>
 
-        <h3><%= user2 %></h3>
-        <div class="chat-window" id="chat-window">
-            <% for (var i = 0; i < chats.length; i++) {
-                var number = chats[i].split("`");
-                var parts = number[1].split(": ");
-                var sender = parts[0];
-                var message = parts.slice(1).join(": ");
-                var isSender = (sender === user1);
-            %>
-                <div class="chat-options" id="<%= i %>">
-                    <div class="chat-header" style="display:flex; justify-content: space-between; align-items: center;">
-                        <strong><%= sender %>:</strong>
-                        <% if (isSender) { %>
-                            <span class="chat-icons">
-                                <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
-                                <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
-                            </span>
-                        <% } %>
-                    </div>
-                    <div class="chat-message-box" style="border: 1px solid #ccc; padding: 6px 10px; margin-top: 4px; border-radius: 6px;">
-                        <%= message %>
-                    </div>
-                </div>
+    <div class="chat-window" id="chat-window">
+      <% chats.forEach((chat, index) => {
+        const [sender, ...msgParts] = chat.split(": ");
+        const message = msgParts.join(": ");
+        const isSender = sender === user1;
+      %>
+        <div class="chat-options" id="<%= index %>">
+          <div class="chat-header" style="display: flex; justify-content: space-between;">
+            <strong><%= sender %>:</strong>
+            <% if (isSender) { %>
+              <span class="chat-icons">
+                <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= index %>" title="Edit">✏️</a>
+                <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= index %>" title="Delete">🗑️</a>
+              </span>
             <% } %>
+          </div>
+          <div class="chat-message-box"><%= message %></div>
         </div>
-
-        <% var j = chats.length; %>
-        <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
-            <input type="text" name="msg" placeholder="Enter message" required>
-            <input type="submit" value="send">
-        </form>
+      <% }); %>
     </div>
+
+    <form method="POST" action="/chat/<%= user2 %>?user=<%= user1 %>">
+      <input type="text" name="msg" placeholder="Enter message" required autocomplete="off" />
+      <input type="submit" value="Send" />
+    </form>
+  </div>
 </main>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    var socket = io();
-    var user1 = "<%= user1 %>";
-    var user2 = "<%= user2 %>";
-    var room = [user1, user2].sort().join("_");
+  const socket = io();
+  const user1 = "<%= user1 %>";
+  const user2 = "<%= user2 %>";
+  const room = [user1, user2].sort().join("_");
+  const chatWindow = document.getElementById("chat-window");
 
-    socket.emit("joinRoom", room);
+  socket.emit("joinRoom", room);
 
-    var chatWindow = document.getElementById("chat-window");
+  socket.on("message", (data) => {
+    const div = document.createElement("div");
+    div.classList.add("chat-options");
+    div.id = data.index;
 
-    // Listen for new messages
-    socket.on("message", function (data) {
-        var div = document.createElement("div");
-        div.classList.add("chat-options");
-        div.id = data.index;
+    const isSender = data.sender === user1;
 
-        var html = '<div class="chat-header" style="display:flex; justify-content: space-between; align-items: center;">' +
-            '<strong>' + data.sender + ':</strong>';
+    let html = `<div class="chat-header" style="display:flex; justify-content: space-between;">
+      <strong>${data.sender}:</strong>`;
 
-        if (data.sender === user1) {
-            html += '<span class="chat-icons">' +
-                '<a href="/edit/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="edit" title="Edit message">✏️</a>' +
-                '<a href="/dlt/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="dlt" title="Delete message">🗑️</a>' +
-                '</span>';
-        }
+    if (isSender) {
+      html += `<span class="chat-icons">
+        <a href="/edit/${user2}?user=${user1}&j=${data.index}" title="Edit">✏️</a>
+        <a href="/dlt/${user2}?user=${user1}&j=${data.index}" title="Delete">🗑️</a>
+      </span>`;
+    }
 
-        html += '</div>' +
-            '<div class="chat-message-box" style="border: 1px solid #ccc; padding: 6px 10px; margin-top: 4px; border-radius: 6px;">' +
-            data.message +
-            '</div>';
+    html += `</div>
+      <div class="chat-message-box">${data.message}</div>`;
 
-        div.innerHTML = html;
-        chatWindow.appendChild(div);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-    });
-
-    // Listen for edits
-    socket.on("editMessage", function (data) {
-        var chatDiv = document.getElementById(data.index);
-        if (chatDiv) {
-            var messageBox = chatDiv.querySelector(".chat-message-box");
-            if (messageBox) {
-                messageBox.textContent = data.message;
-            }
-        }
-    });
-
+    div.innerHTML = html;
+    chatWindow.appendChild(div);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+  });
+
+  socket.on("editMessage", (data) => {
+    const messageDiv = document.getElementById(data.index);
+    if (messageDiv) {
+      const box = messageDiv.querySelector(".chat-message-box");
+      if (box) {
+        box.textContent = data.message;
+      }
+    }
+  });
+
+  chatWindow.scrollTop = chatWindow.scrollHeight;
 </script>
 <%- include("partials/footer.ejs") %>
