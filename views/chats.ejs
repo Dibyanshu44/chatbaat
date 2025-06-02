@@ -5,33 +5,32 @@
 
         <h3><%= user2 %></h3>
         <div class="chat-window" id="chat-window">
-           <% for(var i=0; i < chats.length; i++) {
+            <% for(var i = 0; i < chats.length; i++) {
                 var number = chats[i].split("`");
                 var parts = number[1].split(": ");
                 var sender = parts[0];
                 var message = parts.slice(1).join(": ");
                 var isSender = (sender === user1);
-           %>
+            %>
             <div class="chat-options" id="<%= i %>">
-  <div class="chat-header" style="display:flex; justify-content: space-between; align-items: center;">
-    <strong><%= sender %>:</strong>
-    <% if (isSender) { %>
-      <span class="chat-icons">
-        <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
-        <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
-      </span>
-    <% } %>
-  </div>
-  <div class="chat-message-box" style="border: 1px solid #ccc; padding: 6px 10px; margin-top: 4px; border-radius: 6px;">
-    <%= message %>
-  </div>
-</div>
-
-           <% } %>
+                <div class="chat-header" style="display:flex; justify-content: space-between; align-items: center;">
+                    <strong><%= sender %>:</strong>
+                    <% if (isSender) { %>
+                        <span class="chat-icons">
+                            <a href="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="edit" title="Edit message">✏️</a>
+                            <a href="/dlt/<%= user2 %>?user=<%= user1 %>&j=<%= i %>" class="dlt" title="Delete message">🗑️</a>
+                        </span>
+                    <% } %>
+                </div>
+                <div class="chat-message-box" style="border: 1px solid #ccc; padding: 6px 10px; margin-top: 4px; border-radius: 6px;">
+                    <%= message %>
+                </div>
+            </div>
+            <% } %>
         </div>
-        <% var j=chats.length %>
+        <% var j = chats.length %>
         <form id="chat-form" method="post" action="/chat/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
-            <input type="text" name="msg" placeholder="Enter message" required>
+            <input type="text" name="msg" placeholder="Enter message" required autocomplete="off">
             <input type="submit" value="send">
         </form>
     </div>
@@ -39,12 +38,6 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    document.querySelectorAll('.edit, .dlt').forEach(link => {
-    link.addEventListener('click', function() {
-        window.location.href = this.href;
-    });
-    });
-
     var socket = io();
     var user1 = "<%= user1 %>";
     var user2 = "<%= user2 %>";
@@ -57,20 +50,60 @@
     socket.on("message", function(data) {
         var div = document.createElement("div");
         div.classList.add("chat-options");
+        div.id = data.index;
 
-        var html = "<p><strong>" + data.sender + "</strong>";
+        var headerDiv = document.createElement("div");
+        headerDiv.classList.add("chat-header");
+        headerDiv.style.display = "flex";
+        headerDiv.style.justifyContent = "space-between";
+        headerDiv.style.alignItems = "center";
+
+        var strongSender = document.createElement("strong");
+        strongSender.textContent = data.sender + ":";
+        headerDiv.appendChild(strongSender);
+
         if (data.sender === user1) {
-            html +=
-                ' <span class="chat-icons">' +
-                '<a href="/edit/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="edit" title="Edit message">✏️</a>' +
-                '<a href="/dlt/' + user2 + '?user=' + user1 + '&j=' + data.index + '" class="dlt" title="Delete message">🗑️</a>' +
-                '</span>';
-        }
-        html += ": " + data.message + "</p>";
+            var spanIcons = document.createElement("span");
+            spanIcons.classList.add("chat-icons");
 
-        div.innerHTML = html;
+            var editLink = document.createElement("a");
+            editLink.href = "/edit/" + user2 + "?user=" + user1 + "&j=" + data.index;
+            editLink.title = "Edit message";
+            editLink.classList.add("edit");
+            editLink.textContent = "✏️";
+            spanIcons.appendChild(editLink);
+
+            var deleteLink = document.createElement("a");
+            deleteLink.href = "/dlt/" + user2 + "?user=" + user1 + "&j=" + data.index;
+            deleteLink.title = "Delete message";
+            deleteLink.classList.add("dlt");
+            deleteLink.textContent = "🗑️";
+            spanIcons.appendChild(deleteLink);
+
+            headerDiv.appendChild(spanIcons);
+        }
+
+        var messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat-message-box");
+        messageDiv.style.border = "1px solid #ccc";
+        messageDiv.style.padding = "6px 10px";
+        messageDiv.style.marginTop = "4px";
+        messageDiv.style.borderRadius = "6px";
+        messageDiv.textContent = data.message;
+
+        div.appendChild(headerDiv);
+        div.appendChild(messageDiv);
+
         chatWindow.appendChild(div);
         chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        // Add click listeners for newly added edit/delete buttons
+        div.querySelectorAll('.edit, .dlt').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = this.href;
+            });
+        });
     });
 
     chatWindow.scrollTop = chatWindow.scrollHeight;

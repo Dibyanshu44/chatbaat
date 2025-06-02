@@ -9,7 +9,15 @@
     <form method="post" action="/edit/<%= user2 %>?user=<%= user1 %>&j=<%= j %>">
       <label for="msg">Edit your message:</label>
       <div class="input">
-        <input type="text" id="msg" name="msg" value="<%= content.split(': ').slice(1).join(': ') %>" required>
+        <input 
+          type="text" 
+          id="msg" 
+          name="msg" 
+          value="<%= content.split(': ').slice(1).join(': ') %>" 
+          required 
+          maxlength="500"
+          autocomplete="off"
+        >
       </div>
       <input type="submit" value="Save">
     </form>
