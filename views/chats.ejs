@@ -5,10 +5,14 @@
     <h3>Chat with <%= user2 %></h3>
 
     <div class="chat-window" id="chat-window">
-      <% chats.forEach((chat, index) => {
-        const sepIndex = chat.indexOf(": ");
-        const sender = chat.slice(0, sepIndex);
-        const message = chat.slice(sepIndex + 2);
+      <% chats.forEach((chat) => {
+        const parts = chat.split("`");
+        if (parts.length < 2) return; // skip invalid
+        const index = parts[0];
+        const text = parts[1];
+        const sepIndex = text.indexOf(": ");
+        const sender = text.slice(0, sepIndex);
+        const message = text.slice(sepIndex + 2);
         const isSender = sender === user1;
       %>
         <div class="chat-options" id="<%= index %>">

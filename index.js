@@ -101,10 +101,12 @@ app.get("/chat/:id", (req, res) => {
             });
         } else {
             var chatlist = data.trim().split("|").filter(line => line.trim() !== "");
+            // no change here, keep passing raw strings, parse in EJS
             res.render("chats.ejs", { user1: user1, user2: user2, chats: chatlist });
         }
     });
 });
+
 
 app.post("/chat/:id", (req, res) => {
     var msg = req.body.msg;
