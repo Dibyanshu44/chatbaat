@@ -6,8 +6,9 @@
 
     <div class="chat-window" id="chat-window">
       <% chats.forEach((chat, index) => {
-        const [sender, ...msgParts] = chat.split(": ");
-        const message = msgParts.join(": ");
+        const sepIndex = chat.indexOf(": ");
+        const sender = chat.slice(0, sepIndex);
+        const message = chat.slice(sepIndex + 2);
         const isSender = sender === user1;
       %>
         <div class="chat-options" id="<%= index %>">
@@ -25,7 +26,7 @@
       <% }); %>
     </div>
 
-    <form method="POST" action="/chat/<%= user2 %>?user=<%= user1 %>">
+    <form method="POST" action="/chat/<%= user2 %>?user=<%= user1 %>&j=<%= chats.length %>">
       <input type="text" name="msg" placeholder="Enter message" required autocomplete="off" />
       <input type="submit" value="Send" />
     </form>
